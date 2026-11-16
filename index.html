@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ROI e Payback de Automação com IA</title>
+<meta name="description" content="Calcule payback, VPL, TIR e ROI de um projeto de automação com IA ou RPA, considerando a rampa de adoção." />
+<style>
+  :root { --bg:#f4f7fb; --card:#fff; --text:#132033; --muted:#5b6a80; --accent:#1d4ed8; --line:#e2e8f2; --ok:#1b8a5a; --bad:#c62828; --warn:#b45309; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:28px 5vw 8px; } header h1 { margin:0 0 6px; font-size:clamp(1.5rem,3vw,2.1rem); }
+  header p { margin:0; color:var(--muted); max-width:860px; }
+  main { padding:20px 5vw 40px; display:grid; gap:20px; }
+  .inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; }
+  h2 { margin:0 0 6px; font-size:1.05rem; }
+  label { display:block; font-size:.8rem; color:var(--muted); margin:10px 0 3px; }
+  input { width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:.95rem; }
+  input:focus { outline:2px solid var(--accent); border-color:transparent; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+  .kpi { background:var(--bg); border-radius:12px; padding:14px; } .kpi small { color:var(--muted); display:block; }
+  .kpi b { font-size:1.55rem; font-variant-numeric:tabular-nums; }
+  .kpi.main { background:var(--accent); color:#fff; } .kpi.main small { color:#dbe6ff; }
+  .verdict { margin-top:14px; padding:12px 14px; border-radius:10px; font-weight:600; line-height:1.5; }
+  .note { font-size:.82rem; color:var(--muted); line-height:1.55; }
+  table { width:100%; border-collapse:collapse; font-size:.88rem; margin-top:8px; }
+  th, td { padding:7px 10px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
+  th:first-child, td:first-child { text-align:left; } th { color:var(--muted); font-size:.76rem; text-transform:uppercase; }
+  svg text { font-size:11px; fill:var(--muted); }
+  a { color:var(--accent); } footer { text-align:center; color:var(--muted); font-size:.85rem; padding:0 0 30px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📈 ROI e Payback de Automação com IA</h1>
+  <p>O projeto se paga? Em quantos meses? Informe o investimento, o custo recorrente e a economia esperada. A calculadora considera a <b>rampa de adoção</b> (a economia não vem completa no primeiro mês) e mostra payback, VPL, TIR e ROI no horizonte escolhido.</p>
+</header>
+<main>
+  <section class="inputs">
+    <article class="card">
+      <h2>💸 Investimento e custos</h2>
+      <div class="two">
+        <div><label for="capex">Investimento inicial (R$)</label><input id="capex" type="number" min="0" step="5000" value="250000"></div>
+        <div><label for="opex">Custo recorrente (R$/mês)</label><input id="opex" type="number" min="0" step="1000" value="18000"></div>
+      </div>
+      <p class="note" style="margin-top:10px">Inicial: desenvolvimento, integrações, treinamento e gestão da mudança. Recorrente: licenças, consumo de IA, infraestrutura e sustentação.</p>
+    </article>
+    <article class="card">
+      <h2>💰 Benefícios</h2>
+      <div class="two">
+        <div><label for="base">Custo atual do processo (R$/mês)</label><input id="base" type="number" min="0" step="5000" value="120000"></div>
+        <div><label for="reduction">Redução com a automação (%)</label><input id="reduction" type="number" min="0" max="100" step="1" value="45"></div>
+        <div><label for="other">Outros ganhos (R$/mês)</label><input id="other" type="number" min="0" step="1000" value="8000"></div>
+        <div><label for="ramp">Meses até a economia plena</label><input id="ramp" type="number" min="1" max="24" step="1" value="6"></div>
+      </div>
+      <p class="note" style="margin-top:10px">Outros ganhos: multas de SLA evitadas, receita recuperada, redução de retrabalho. Use só o que puder ser medido.</p>
+    </article>
+    <article class="card">
+      <h2>📅 Análise</h2>
+      <div class="two">
+        <div><label for="horizon">Horizonte (meses)</label><input id="horizon" type="number" min="6" max="60" step="6" value="36"></div>
+        <div><label for="rate">Taxa de desconto (% ao ano)</label><input id="rate" type="number" min="0" max="50" step="0.5" value="12"></div>
+      </div>
+      <p class="note" style="margin-top:10px">A taxa de desconto representa o custo de oportunidade do dinheiro, por exemplo o custo de capital da empresa.</p>
+    </article>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <h2 style="margin:0 0 12px">Resultado</h2>
+    <div class="kpis">
+      <div class="kpi main"><small>Payback</small><b id="kPay">–</b></div>
+      <div class="kpi"><small>ROI no horizonte</small><b id="kRoi">–</b></div>
+      <div class="kpi"><small>VPL</small><b id="kNpv">–</b></div>
+      <div class="kpi"><small>TIR (ao ano)</small><b id="kIrr">–</b></div>
+      <div class="kpi"><small>Economia líquida em regime</small><b id="kNet">–</b></div>
+    </div>
+    <div class="verdict" id="verdict"></div>
+    <h2 style="margin:22px 0 4px;font-size:1rem">Fluxo de caixa acumulado</h2>
+    <svg id="chart" viewBox="0 0 760 240" width="100%" role="img" aria-label="Fluxo de caixa acumulado do projeto"></svg>
+    <h2 style="margin:18px 0 4px;font-size:1rem">Resumo por ano</h2>
+    <table><thead><tr><th>Ano</th><th>Benefícios</th><th>Custos</th><th>Fluxo líquido</th><th>Acumulado</th></tr></thead><tbody id="rows"></tbody></table>
+    <p class="note">Como calculamos: benefício do mês t = (custo atual × redução + outros ganhos) × min(t ÷ meses de rampa, 1).
+      Fluxo do mês = benefício − custo recorrente; no mês 0 entra o investimento inicial (negativo).
+      Payback = primeiro mês com acumulado ≥ 0. VPL desconta cada fluxo pela taxa mensal equivalente (1 + taxa anual)^(1/12) − 1.
+      TIR = taxa que zera o VPL. ROI = (benefícios − custos) ÷ custos no horizonte.</p>
+  </section>
+</main>
+<footer>Projeto autoral de <b>Monique da Silva Cruz</b> · <a href="https://github.com/MoniqueSilva79/roi-automacao-ia">código no GitHub</a> · cálculo 100% no navegador · valores ilustrativos</footer>
+<script>
+const $ = id => document.getElementById(id);
+const v = id => +$(id).value || 0;
+const brl = (x, d = 0) => Number.isFinite(x) ? x.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+const brlK = x => Math.abs(x) >= 1e6 ? 'R$ ' + (x / 1e6).toFixed(1).replace('.', ',') + ' mi' : 'R$ ' + Math.round(x / 1e3) + ' mil';
+const pct = x => Number.isFinite(x) ? (x * 100).toFixed(1).replace('.', ',') + '%' : '–';
+
+function flows() {
+  const H = Math.max(6, Math.round(v('horizon'))), ramp = Math.max(1, v('ramp'));
+  const full = v('base') * v('reduction') / 100 + v('other');
+  const ben = [0], cost = [v('capex')];
+  for (let t = 1; t <= H; t++) { ben.push(full * Math.min(t / ramp, 1)); cost.push(v('opex')); }
+  return { H, full, ben, cost, net: ben.map((b, i) => b - cost[i]) };
+}
+const npvAt = (net, rm) => net.reduce((s, f, t) => s + f / Math.pow(1 + rm, t), 0);
+function irrMonthly(net) {
+  if (npvAt(net, 0) <= 0) return NaN;
+  let lo = 0, hi = 1;
+  while (npvAt(net, hi) > 0 && hi < 100) hi *= 2;
+  for (let i = 0; i < 100; i++) { const mid = (lo + hi) / 2; npvAt(net, mid) > 0 ? lo = mid : hi = mid; }
+  return (lo + hi) / 2;
+}
+
+function calc() {
+  const f = flows();
+  const rm = Math.pow(1 + v('rate') / 100, 1 / 12) - 1;
+  const cum = []; f.net.reduce((s, x, i) => (cum[i] = s + x), 0);
+  const pay = cum.findIndex((c, i) => i > 0 && c >= 0);
+  const npv = npvAt(f.net, rm);
+  const irm = irrMonthly(f.net);
+  const totB = f.ben.reduce((a, b) => a + b, 0), totC = f.cost.reduce((a, b) => a + b, 0);
+  const roi = (totB - totC) / totC;
+  const netSteady = f.full - v('opex');
+
+  $('kPay').textContent = pay > 0 ? `${pay} meses` : 'não se paga';
+  $('kRoi').textContent = pct(roi);
+  $('kNpv').textContent = brl(npv);
+  $('kIrr').textContent = Number.isFinite(irm) ? pct(Math.pow(1 + irm, 12) - 1) : '–';
+  $('kNet').textContent = brl(netSteady) + '/mês';
+
+  const vd = $('verdict'); let tone, msg;
+  if (netSteady <= 0) { tone = 'bad'; msg = `⛔ A economia mensal (${brl(f.full)}) não cobre o custo recorrente (${brl(v('opex'))}): o projeto nunca se paga. Revise o escopo ou o custo de operação.`; }
+  else if (pay < 0) { tone = 'warn'; msg = `⚠️ O projeto gera ${brl(netSteady)}/mês em regime, mas não se paga em ${f.H} meses. Aumente o horizonte, reduza o investimento inicial ou acelere a adoção.`; }
+  else if (npv < 0) { tone = 'warn'; msg = `⚠️ O projeto se paga em ${pay} meses, mas o VPL é negativo a ${v('rate')}% ao ano: o retorno não supera o custo do capital no horizonte.`; }
+  else { tone = 'ok'; msg = `✅ Projeto viável: se paga em ${pay} meses e entrega VPL de ${brl(npv)} e ROI de ${pct(roi)} em ${f.H} meses.`; }
+  vd.style.background = { ok: '#e3f4ec', warn: '#fff4e0', bad: '#fde8e8' }[tone];
+  vd.style.color = { ok: 'var(--ok)', warn: 'var(--warn)', bad: 'var(--bad)' }[tone];
+  vd.textContent = msg;
+
+  const years = Math.ceil(f.H / 12); let acc = 0, html = '';
+  for (let y = 0; y < years; y++) {
+    const a = y === 0 ? 0 : y * 12 + 1, b = Math.min((y + 1) * 12, f.H);
+    let B = 0, C = 0; for (let t = a; t <= b; t++) { B += f.ben[t]; C += f.cost[t]; }
+    acc += B - C;
+    html += `<tr><td>Ano ${y + 1}${y === 0 ? ' (inclui investimento)' : ''}</td><td>${brl(B)}</td><td>${brl(C)}</td><td>${brl(B - C)}</td><td style="color:${acc < 0 ? 'var(--bad)' : 'var(--ok)'}">${brl(acc)}</td></tr>`;
+  }
+  $('rows').innerHTML = html;
+  draw(cum, pay);
+}
+
+function draw(cum, pay) {
+  const W = 760, H = 240, pl = 70, pr = 14, pt = 12, pb = 28;
+  const min = Math.min(...cum, 0), max = Math.max(...cum, 0), span = (max - min) || 1;
+  const x = i => pl + i * (W - pl - pr) / (cum.length - 1);
+  const y = val => pt + (max - val) / span * (H - pt - pb);
+  let s = '';
+  for (let k = 0; k <= 4; k++) { const val = min + span * k / 4; s += `<line x1="${pl}" x2="${W - pr}" y1="${y(val)}" y2="${y(val)}" stroke="#e2e8f2"/><text x="${pl - 6}" y="${y(val) + 4}" text-anchor="end">${brlK(val)}</text>`; }
+  s += `<line x1="${pl}" x2="${W - pr}" y1="${y(0)}" y2="${y(0)}" stroke="#94a3b8"/>`;
+  cum.forEach((c, i) => { if (i % 6 === 0) s += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle">m${i}</text>`; });
+  const pts = cum.map((c, i) => `${x(i)},${y(c)}`).join(' ');
+  s += `<polygon points="${x(0)},${y(0)} ${pts} ${x(cum.length - 1)},${y(0)}" fill="rgba(29,78,216,.12)"/>`;
+  s += `<polyline points="${pts}" fill="none" stroke="#1d4ed8" stroke-width="2.5"/>`;
+  if (pay > 0) s += `<line x1="${x(pay)}" x2="${x(pay)}" y1="${pt}" y2="${H - pb}" stroke="#1b8a5a" stroke-dasharray="5 4"/><circle cx="${x(pay)}" cy="${y(cum[pay])}" r="5" fill="#1b8a5a"/><text x="${x(pay) + 6}" y="${pt + 12}" style="fill:#1b8a5a;font-weight:700">payback: mês ${pay}</text>`;
+  $('chart').innerHTML = s;
+}
+document.querySelectorAll('input').forEach(i => i.addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>
